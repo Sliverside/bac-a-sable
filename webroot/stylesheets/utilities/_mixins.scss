@@ -1,0 +1,188 @@
+//  ------------------------------------------------------------------------  \\
+//                                                                            \\
+//  mixins                                                                    \\
+//  |-- #1 SELECTORS MAPS                                                     \\
+//  |   |-- 1.build selector of a map                                         \\
+//  |   |-- 2.build css of a map                                              \\
+//  |   |-- 3.build parameters of a map                                       \\
+//  |   |-- 4.set default value                                               \\
+//  |   |-- 5.particular rules                                                \\
+//                                                                            \\
+//  ------------------------------------------------------------------------  \\
+
+
+// #1 SELECTORS MAPS ######################################################## \\
+// ========================================================================== \\
+
+
+// | 1.build selector of a map ============================================== \\
+
+@mixin build-selector-of($map, $x-fixe: false) {
+  $use-this-selector: true;
+  $selector-is-first: true;
+  $prefixe: '';
+  $sufixe: '';
+  $css-selector: ''; //init var for output
+
+  @if $x-fixe {
+    // if the selectors should have a prefixe or a sufixe
+    // find if it's a sufixe or a prefixe then delete the +all+ from them
+    @if str-slice($x-fixe, 1, 5) == '+all+' {
+      $sufixe: str-del($x-fixe, '+all+');
+    }@else if str-slice($x-fixe, -5, -1) == '+all+' {
+      $prefixe: str-del($x-fixe, '+all+');
+    }@else {
+      // if +all+ is written inside the selector then parse an error
+      @error "wrong placement of '+all+', should be at start or end of selector";
+    }
+  }
+  @each $selector, $parameters in $map {
+    // if the selector is special ('_') or an under lvl ('/')
+    // or a global selector ('+all+') then dont use this selector
+    // for the global selector
+    @if str-slice($selector, 1, 1) == '_'
+    or str-slice($selector, 1, 1) == '/'
+    or str-index($selector, '+all+') != null {
+      $use-this-selector: false;
+    }
+    @if $use-this-selector {
+      @if $selector-is-first {
+        // build the first selector of the global selector
+        $css-selector: '#{$prefixe}#{$selector}#{$sufixe}';
+        $selector-is-first: false;
+      }@else {
+        // build all the selectors of the global selector
+        $css-selector: '#{$css-selector}, #{$prefixe}#{$selector}#{$sufixe}';
+      }
+    }
+    // reinit the value of $use-this-selector for the next selector
+    $use-this-selector: true;
+  }
+  //output the selector with the @content
+  #{unquote($css-selector)} {
+    @content;
+  }
+}
+
+// | 2.build css of a map =================================================== \\
+
+@mixin build-css-of($map) {
+  $selector:'';
+  $parameters:'';
+  @each $key, $value in $map {
+    // verify if the value is a map
+    // and if the key is not a global selector ('+all')
+    @if type-of($value) == map
+    and (type-of($key) == string and str-index($key, '+all+') == null) {
+      @if str-slice($key, 1, 1) == '/' {
+        //if it's an under lvl selector delete is prefixe ('/')
+        $key: str-slice($key, 2, -1);
+      }
+      $selector: $key;
+      $parameters: $value;
+      //simulate natural scss (ampersand hack)
+      @if str-slice($selector, 1, 1) == '&' {
+        &#{str-del-sub($selector, '&')} {
+          //include scss
+          @include build-parameters-of($parameters, $map, $selector);
+        }
+      }@else if str-slice($selector, -1, -1) == '&' {
+        #{str-del-sub($selector, '&')}& {
+          //include scss
+          @include build-parameters-of($parameters, $map, $selector);
+        }
+      }@else {
+        #{$selector} {
+          //include scss
+          @include build-parameters-of($parameters, $map, $selector);
+        }
+      }
+    }@else if str-index($key, '+all+') {
+      @include build-selector-of($map, $key) {
+        @include build-parameters-of($value, $map, $selector);
+      }
+    }
+  }
+};
+
+// | 3.build parameters of a map ============================================ \\
+
+@mixin build-parameters-of($parameters, $map, $main-selector, $position :'') {
+  // simulate natural scss
+  @each $parameter, $value in $parameters {
+    @if (str-slice($parameter, 1, 1) != '_')
+    and ($value != default)
+    and (type-of($value) != map) {
+      #{$parameter}: $value;
+    }@else if type-of($value) == map {
+      @if $position == '' {
+        $position: $parameter;
+      }@else {
+        $position: '#{$position} #{$parameter}';
+      }
+      #{$parameter}{
+        @include build-parameters-of($value, $map, $main-selector, $position);
+        // reinitialize the value of $position
+        // the '+2' allow to not select the space en the first characther
+        $position: str-slice($position, 1, -(str-length($parameter)+2));
+      }
+    }@else if (str-slice($parameter, 1, 1) == '_')
+    or ($value == default) {
+      // if the parameter is special or the value is default
+      // use the particular rules
+      @include particular-rules($map, $main-selector, $parameter, $position, $value);
+    }
+  }
+}
+
+// | 4.set default ========================================================== \\
+
+@mixin set-default(
+$parameter_to_set,
+$parameter,
+$position-to-set :'',
+$position :'') {
+  @if $parameter == $parameter_to_set and $position == $position-to-set{
+    @content;
+  }
+}
+
+// | 5.particular rules ===================================================== \\
+
+@mixin particular-rules($map, $main-selector, $parameter, $position, $value) {
+  @if $map == $test {
+    @if $position == '&.paragraphe span' {
+      @include set-default(background-color, $parameter, '&.paragraphe span', $position) {
+        background-color: green;
+      }
+    }@else if $position == '&.paragraphe' {
+      @include set-default(background-color, $parameter, '&.paragraphe', $position) {
+        background-color: mix(map-deep-get($map $main-selector $position color), white, 40%);
+      }
+    }@else {
+      @include set-default(background-color, $parameter) {
+        background-color: mix(map-deep-get($map $main-selector color), white, 40%);
+      }
+    }
+  }
+}
+
+// $test: (
+//   '.un': (
+//     color: blue,
+//     //background-color: default,
+//     '&.paragraphe':(
+//       color: yellow,
+//       span :(
+//         background-color: default,
+//       ),
+//       background-color: default,
+//     ),
+//     background-color: default,
+//   ),
+//   'p+all+': (
+//   font-weight: bold,
+//   ),
+// );
+//
+// @include build-css-of($test);

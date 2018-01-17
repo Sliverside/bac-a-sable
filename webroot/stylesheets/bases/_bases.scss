@@ -1,0 +1,40 @@
+* {
+  box-sizing: border-box;
+  line-height: 1.15;
+}
+
+body, h1, h2, h3, h4, h5, h6, p { margin: 0; }
+
+textarea { vertical-align: top; }
+
+// test-style start
+
+#main-header,
+#main-footer {
+  background-color: #eee;
+  padding: 10px;
+}
+
+#main-nav {
+  margin-top: 10px;
+  background-color: #868686;
+  padding: 10px;
+  font-size: 0;
+  a {
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    padding: 0.4em;
+    background-color: #ccc;
+    &:hover,
+    &.current-page {
+      background-color: #a1a1a1;
+    }
+  }
+}
+
+#main-content {
+  margin: 20px;
+}
+
+// test-style end

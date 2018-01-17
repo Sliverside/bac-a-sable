@@ -1,0 +1,19 @@
+table {
+  border-collapse:collapse;
+  width:100%;
+  max-width:1000px;
+  min-width:400px;
+  text-align:center;
+  &, th, td {
+    border: 1px solid gray;
+  }
+  th, td {
+    height: 24px;
+    max-width: 300px;
+    padding:4px;
+    vertical-align:middle;
+  }
+  tbody tr:nth-child(odd){
+    background-color: #eee;
+  }
+}

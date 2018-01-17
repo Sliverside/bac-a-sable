@@ -1,0 +1,31 @@
+.debuger-container {
+  background-color: #031c28;
+  color: #a7b0af;
+  padding: 20px;
+  white-space: pre-wrap; }
+  .debuger-container h2 {
+    font-size: 24px;
+    line-height: 1.15em;
+    margin: 0px;
+    color: #dda300; }
+  .debuger-container .debugger-trace {
+    color: #a13024; }
+  .debuger-container .debugger-toggleBacktrace {
+    margin: 0;
+    text-decoration: underline;
+    cursor: pointer;
+    display: block;
+    background-color: #a7b0af;
+    color: #a13024;
+    padding: 20px; }
+  .debuger-container .debugger-backtrace {
+    font-size: 14px;
+    margin: 0 0 20px;
+    background-color: #a7b0af;
+    color: #031c28; }
+    .debuger-container .debugger-backtrace ol {
+      display: none;
+      margin: 0;
+      padding: 0 20px 20px 40px; }
+
+/*# sourceMappingURL=debugger.css.map */

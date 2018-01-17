@@ -1,0 +1,246 @@
+//  ------------------------------------------------------------------------  \\
+//                                                                            \\
+//  mixins                                                                    \\
+//  |-- #1 COLORS ##########################################################  \\
+//  |   |-- 1.tint                                                            \\
+//  |   |-- 2.shade                                                           \\
+//  |                                                                         \\
+//  |-- #1 MAPS ############################################################  \\
+//  |   |-- 1.map deep get                                                    \\
+//  |   |-- 2.map deep set                                                    \\
+//  |                                                                         \\
+//  |-- #1 STRINGS #########################################################  \\
+//  |   |-- 1.delete iteration (of substring)                                 \\
+//  |   |-- 2.nth index (of substring)                                        \\
+//  |   |-- 1.delete (substring) through                                      \\
+//                                                                            \\
+//  ------------------------------------------------------------------------  \\
+
+
+
+// #1 COLOR ################################################################# \\
+// ========================================================================== \\
+
+
+// | 1.tint ==================================================================\\
+
+/// Slightly lighten a color
+/// @author unknow
+/// @access public
+/// @param {Color} $color - color to tint
+/// @param {Number} $percentage - percentage of `$color` in returned color
+/// @return {Color}
+@function tint($color, $percentage) {
+  @return mix(#fff, $color, $percentage);
+}
+
+
+// | 2.shade =================================================================\\
+
+/// Slightly darken a color
+/// @author unknow
+/// @access public
+/// @param {Color} $color - color to shade
+/// @param {Number} $percentage - percentage of `$color` in returned color
+/// @return {Color}
+@function shade($color, $percentage) {
+  @return mix(#000, $color, $percentage);
+}
+
+
+
+
+// #2 MAP ################################################################### \\
+// ========================================================================== \\
+
+
+// | 1.map deep get ==========================================================\\
+
+/// Deep get function to get a value in nested maps
+/// @author Lilian Moulanier
+/// @access public
+/// @param {list} $list - first argument is the map, other arguments are a key to find in the previous map
+/// @return {*} value of last key of $list
+@function map-deep-get($list) {
+  // get the deepness of the key to find
+  $length: length($list);
+  // init $value with
+  // the key: `2nd argument of $list` in the map: `1st argument of $list`
+  $value: map-get(nth($list, 1), nth($list, 2));
+  // take the $i key and get the value of ($i + 1) key
+  @if $length > 2 {
+    @for $n from 2 through $length - 1 {
+      // $value equal
+      // the key: `($n +1) argument of $list` in the map: `$value`
+      $value: map-get($value, nth($list, $n + 1));
+    }
+  }
+  @return $value;
+}
+
+
+// | 2.map deep set ========================================================= \\
+
+/// Deep set function to set a value in nested maps
+/// @author Hugo Giraudel
+/// @access public
+/// @param {Map} $map - Map
+/// @param {List} $keys -  Key chaine
+/// @param {*} $value - Value to assign
+/// @return {Map} map with the new key and her value
+@function map-deep-set($map, $keys, $value) {
+  $maps: ($map,);
+  $result: null;
+
+  // If the last key is a map already
+  // Warn the user we will be overriding it with $value
+  @if type-of(nth($keys, -1)) == 'map' {
+    @warn "The last key you specified is a map; it will be overrided with `#{$value}`.";
+  }
+
+  // If $keys is a single key
+  // Just merge and return
+  @if length($keys) == 1 {
+    @return map-merge($map, ($keys: $value));
+  }
+
+  // Loop from the first to the second to last key from $keys
+  // Store the associated map to this key in the $maps list
+  // If the key doesn't exist, throw an error
+  @for $i from 1 through length($keys) - 1 {
+    $current-key: nth($keys, $i);
+    $current-map: nth($maps, -1);
+    $current-get: map-get($current-map, $current-key);
+    @if $current-get == null {
+      @error "Key `#{$key}` doesn't exist at current level in map.";
+    }
+    $maps: append($maps, $current-get);
+  }
+
+  // Loop from the last map to the first one
+  // Merge it with the previous one
+  @for $i from length($maps) through 1 {
+    $current-map: nth($maps, $i);
+    $current-key: nth($keys, $i);
+    $current-val: if($i == length($maps), $value, $result);
+    $result: map-merge($current-map, ($current-key: $current-val));
+  }
+
+  // Return result
+  @return $result;
+}
+
+
+
+
+// #3 STRING ################################################################ \\
+// ========================================================================== \\
+
+// | 1.delete (substring) through =========================================== \\
+
+/// Delete the first iteration of $sub in $string through $number
+/// @access public
+/// @param {string} $string - string to work with
+/// @param {string} $sub - substring to delete in $string
+/// @param {number} $number - number of iteration to delete
+/// @param {boolean} $null - return null when their is no more $sub in $string
+/// @return {string}
+@function str-del-through($string, $sub, $number, $null:false) {
+  $sub-lenght: str-length($sub);
+  //$sub-index: '';
+  //$before-sub: '';
+  //$after-sub: '';
+  @if str-index($string, $sub) != null {
+    @for $i from 1 through $number {
+      @if $string != null {
+        $sub-index: str-index($string, $sub);
+        @if $sub-index != null {
+          $before-sub: str-slice($string, 1, $sub-index - 1);
+          $after-sub: str-slice($string, $sub-index + $sub-lenght, -1);
+          $string: unquote('#{$before-sub}#{$after-sub}');
+        }@else if $null == true {
+          $string: null;
+        }
+      }
+    }
+  }
+  @return $string;
+}
+
+// | 2.nth index (of substring) ============================================= \\
+
+/// reference substring from a string
+/// @author lilian Moulanier
+/// @access public
+/// @param {string} $string - string to work with
+/// @param {string} $sub -  substring to reference
+/// @param {*} $positions - all -> all iteration, {number} -> iteration to reference, {list} -> list of iterations number to reference
+/// @return {map} a map like map: (`position number`: (`start leter index`, `end leter index`), ...)
+@function str-nth-index($string, $sub, $positions: all) {
+  $cache: '';
+  $i: 0;
+  $sub-lenght: str-length($sub);
+  $sub-exist: true;
+  $sub-index: '';
+  $before-sub: '';
+  $after-sub: '';
+  $sub-indexs: ();
+
+  @if $positions == all {
+    $positions: ();
+    $i: 0;
+    @while $sub-exist != null {
+      @if $i > 0 {
+        $positions: append($positions, $i);
+      }
+      $i: $i + 1;
+      $sub-exist: str-del-through($string, $sub, $i, $null: true);
+    }
+  }
+  @each $position in $positions {
+    $cache: $string;
+    @if $position > 1 {
+      $cache: str-del-through($string, $sub, $position - 1);
+    }
+    @if $position < 1 {
+      @error 'function: str-nth-index accept positions > 0 was: \'#{$position}\'';
+    }
+    $curent-sub-index: str-index($cache, $sub);
+    @if $curent-sub-index != null {
+      $sub-index: $sub-lenght * ($position - 1) + $curent-sub-index;
+      $sub-indexs: map-merge($sub-indexs, ($position: ($sub-index, $sub-index + $sub-lenght - 1)));
+    }
+  }
+  @return $sub-indexs;
+}
+//.test{content:'#{str-nth-index('1 test, 2 test, 3 test, 4 test', 'test', (1, 2, 3, 4, 5))}'}
+
+// | 3.delete (substring) =================================================== \\
+
+/// delete substring from a string
+/// @author lilian Moulanier
+/// @access public
+/// @param {string} $string - string to work with
+/// @param {string} $sub -  substring to remove
+/// @param {*} $positions - all -> all iteration, (through:{number}) -> delete iteration through number, {number} -> iteration to delete, {list} of {numbers} -> list of iterations number to delete
+/// @return {string} a string with curent substring deleted
+@function str-del($string, $sub, $positions: all) { //position through don't work
+  $sub-lenght: str-length($sub);
+  $sub-index: '';
+  $before-sub: '';
+  $after-sub: '';
+  $subs-del-lenght: 0;
+  @if type-of($positions) == map
+  and map-get($positions, through) {
+    $string: str-del-through($string, $sub, map-get($positions, through));
+  }@else {
+    $subs-to-del: str-nth-index($string, $sub, $positions);
+    @each $iteration, $sub-pos in $subs-to-del {
+      $before-sub: str-slice($string, 1, (nth($sub-pos, 1) - 1 - $subs-del-lenght));
+      $after-sub: str-slice($string, (nth($sub-pos, 2) + 1 - $subs-del-lenght), -1);
+      $string: unquote('#{$before-sub}#{$after-sub}');
+      $subs-del-lenght: $subs-del-lenght + $sub-lenght;
+    }
+  }
+  @return $string;
+}
