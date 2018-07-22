@@ -10,3 +10,6 @@
   <?php endforeach; ?>
   <a href="<?php echo Router::url('posts/index'); ?>">Blog</a>
 </nav>
+
+<?php
+debug($_SERVER, 'base url');

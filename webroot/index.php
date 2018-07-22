@@ -22,8 +22,7 @@ define('ROOT', dirname(WEBROOT));
 define('CORE', ROOT.DS.'core');
 
 # lien vers le dossier du site
-  define('BASE_URL', dirname(dirname($_SERVER['SCRIPT_NAME'])));
-
+define('BASE_URL', ''); //dirname(dirname($_SERVER['SCRIPT_NAME']))
 # on appelle le fichier includes.php qui sert à importer plus facilement
 # les ellement principaux du site
 require CORE.DS.'includes.php';
